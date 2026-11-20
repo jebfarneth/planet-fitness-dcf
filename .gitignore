@@ -4,3 +4,12 @@ __pycache__/
 *.pyc
 .DS_Store
 ~$*.xlsx
+# Large SEC downloads are re-fetched by src/fetch.py (cached locally); small market files are committed
+data/raw/companyfacts_*.json
+data/raw/submissions_*.json
+data/raw/company_tickers.json
+data/raw/*.htm
+data/text/
+output/.recalc_cache.pkl
+output/.names.pkl
+output/PLNT_DCF_Model_scen*.xlsx

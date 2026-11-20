@@ -1,0 +1,49 @@
+{
+ "base": 83.57390534222286,
+ "tornado": {
+  "Franchise SCS +/-1pp (FY27-31)": [
+   -2.51,
+   2.61
+  ],
+  "Corporate SCS +/-1pp (FY27-31)": [
+   -1.4,
+   1.45
+  ],
+  "Franchise net adds +/-20/yr (FY27-31)": [
+   -1.95,
+   1.95
+  ],
+  "Franchise margin +/-2pp": [
+   -1.87,
+   1.87
+  ],
+  "Corporate club margin +/-2pp": [
+   -2.67,
+   2.67
+  ],
+  "Capex +/-1pp of revenue": [
+   2.71,
+   -2.71
+  ],
+  "Overhead +/-0.5pp": [
+   1.51,
+   -1.51
+  ],
+  "WACC +/-0.5% (perpetuity)": [
+   12.27,
+   -10.02
+  ],
+  "Terminal g +/-0.5% (perpetuity)": [
+   -8.46,
+   10.36
+  ],
+  "WACC +/-0.5% (exit)": [
+   2.45,
+   -2.38
+  ],
+  "Exit multiple +/-1.0x": [
+   -7.58,
+   7.58
+  ]
+ }
+}

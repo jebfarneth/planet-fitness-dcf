@@ -8,6 +8,8 @@ import sys
 import time
 from pathlib import Path
 
+import subprocess
+
 import requests
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,17 +20,27 @@ SEC_UA = "Jeb Farneth jebwfarneth@outlook.com"
 _last_sec = [0.0]
 
 
-def _get(url, headers=None):
-    r = requests.get(url, headers=headers or {}, timeout=60)
-    r.raise_for_status()
-    return r.content
+def _get(url, headers=None, tries=3):
+    for i in range(tries):
+        try:
+            r = requests.get(url, headers=headers or {}, timeout=120)
+            r.raise_for_status()
+            return r.content
+        except requests.RequestException:
+            if i == tries - 1:
+                raise
+            time.sleep(3 * (i + 1))
 
 
-def cached(name, url, sec=False, force=False):
+def cached(name, url, sec=False, force=False, use_curl=False):
     path = RAW / name
     if path.exists() and not force:
         return path
-    headers = {"User-Agent": SEC_UA if sec else "Mozilla/5.0 (educational DCF model)"}
+    if use_curl:  # FRED times out python-requests clients but serves curl
+        subprocess.run(["curl", "-sf", "-m", "120", "--retry", "3", "-o", str(path), url], check=True)
+        print(f"downloaded {name}")
+        return path
+    headers = {"User-Agent": SEC_UA if sec else "dcf-valuation-script/1.0"}
     if sec:
         wait = 0.25 - (time.time() - _last_sec[0])  # <= 4 req/s
         if wait > 0:
@@ -77,3 +89,54 @@ def filing_url(cik, acc, doc):
 def plnt_docs():
     for k, (acc, doc) in PLNT_DOCS.items():
         cached(f"PLNT_{k}.htm", filing_url(COMPANIES["PLNT"], acc, doc), sec=True)
+
+
+# ---- Market data -----------------------------------------------------------
+PEERS = {  # ticker -> CIK (fitness operators/franchisors + asset-light franchisors)
+    "LTH": "0001869198", "XPOF": "0001802156", "DPZ": "0001286681", "WING": "0001636222",
+    "WEN": "0000030697", "CHH": "0001046311", "DRVN": "0001804745", "VVV": "0001674910",
+}
+PRICE_FROM, PRICE_TO = "2021-09-01", "2026-11-19"
+
+
+def nasdaq_prices(ticker):
+    """Daily closes from Nasdaq.com's public historical-quotes endpoint (Stooq now
+    serves a JavaScript bot challenge, so it cannot be fetched as a CSV)."""
+    url = (f"https://api.nasdaq.com/api/quote/{ticker}/historical?assetclass=stocks"
+           f"&fromdate={PRICE_FROM}&todate={PRICE_TO}&limit=9999")
+    return cached(f"prices_{ticker}.json", url)
+
+
+def market():
+    # S&P 500 price index, daily (FRED series SP500, source: S&P Dow Jones Indices)
+    cached("fred_SP500.csv", "https://fred.stlouisfed.org/graph/fredgraph.csv?id=SP500", use_curl=True)
+    # US Treasury daily par yield curve, 2026 (treasury.gov)
+    cached("treasury_par_yield_2026.csv",
+           "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/"
+           "daily-treasury-rates.csv/2026/all?type=daily_treasury_yield_curve"
+           "&field_tdr_date_value=2026&page&_format=csv")
+    # Damodaran implied ERP history (annual) and monthly updates
+    cached("damodaran_histimpl.xls", "https://pages.stern.nyu.edu/~adamodar/pc/datasets/histimpl.xls")
+    cached("damodaran_ERPbymonth.xlsx", "https://pages.stern.nyu.edu/~adamodar/pc/implprem/ERPbymonth.xlsx")
+    for t in ["PLNT", *PEERS]:
+        nasdaq_prices(t)
+    for t, c in PEERS.items():
+        sec_company(t, c)
+
+
+def treasury_2025():
+    cached("treasury_par_yield_2025.csv",
+           "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/"
+           "daily-treasury-rates.csv/2025/all?type=daily_treasury_yield_curve"
+           "&field_tdr_date_value=2025&page&_format=csv")
+
+
+if __name__ == "__main__" and "all" in sys.argv:
+    market()
+    treasury_2025()
+
+
+def plnt_8k():
+    """Q3 2026 earnings press release (8-K Exhibit 99.1, filed 2026-11-05) - 2026 outlook."""
+    cached("PLNT_8K_2026-11-05_ex991.htm",
+           filing_url(COMPANIES["PLNT"], "0001637207-26-000047", "plntq32026pressreleaseex991.htm"), sec=True)
