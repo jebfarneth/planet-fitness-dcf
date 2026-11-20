@@ -478,7 +478,7 @@ def build_beta():
     B.label(ws, "I6", "52-week high (close)")
     B.f(ws, "L6", f"=MAX({drng})", "ps", name="wk52_hi")
     B.label(ws, "I8", "Read-across: PLNT's 2-year weekly beta is ~0 with R-squared ~0. The stock fell ~50% in 2026 on company-specific news", italic=True)
-    B.label(ws, "I9", "(same-club-sales slowdown, CEO transition), so the regression measures idiosyncratic risk, not market risk.", italic=True)
+    B.label(ws, "I9", "(same-club sales slowed to 1.5% in Q3 2026; CFO transition), so the regression measures idiosyncratic risk, not market risk.", italic=True)
     B.label(ws, "I10", "The WACC therefore uses a bottom-up peer-median unlevered beta (5-year monthly), relevered at the target structure.", italic=True)
     ws.freeze_panes = "B5"
 
@@ -769,6 +769,18 @@ def build_projections():
     B.f(ws, f"D{rr}", "={g_open_lo}-25", "n")
     B.f(ws, f"E{rr}", "={g_open_hi}-25", "n")
     B.label(ws, f"K{rr}", "Model uses net additions (after closures); outlook is gross openings.", italic=True)
+
+    B.section(ws, 85, "Revenue growth fade - drivers behind each year (revenue excl. NAF)", 10)
+    B.header_row(ws, 86, 3, ["FY2025A"] + PROJ_YEARS)
+    line("p_frclub_g", 87, "Average franchise club growth", None, "={p_fr_avg@#}/{p_fr_avg@~}-1", "pct")
+    line("p_coclub_g", 88, "Average corporate club growth", None, "={p_co_avg@#}/{p_co_avg@~}-1", "pct")
+    line("p_scs_show", 89, "Franchise same-club sales growth", None, "={p_fr_scs@#}", "pct")
+    line("p_roypc_g", 90, "Royalty per avg. franchise club growth (SCS + ramp / rate mix)", None, "={p_roy_pc@#}/{p_roy_pc@~}-1", "pct")
+    line("p_copc_g", 91, "Revenue per avg. corporate club growth", None, "={p_co_pc@#}/{p_co_pc@~}-1", "pct")
+    line("p_rx_g", 92, "Revenue growth excl. NAF", None, "={p_rev_xnaf@#}/{p_rev_xnaf@~}-1", "pct", True)
+    B.label(ws, "K87", "Club growth fades as the committed pipeline is worked down (net franchise adds 145 -> 80).", italic=True)
+    B.label(ws, "K89", "Same-club sales: 3.0% in FY2027 (guidance-era pricing / Black Card mix) settling to ~2.5% (inflation-like).", italic=True)
+    B.label(ws, "K92", "FY2026E is lower excl. NAF because the 2026 NAF rate step-up (2% -> 3%) inflates total revenue growth to ~8%.", italic=True)
     ws.freeze_panes = "C5"
 
 

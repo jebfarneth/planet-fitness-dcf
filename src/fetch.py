@@ -4,6 +4,7 @@ Re-running skips any file already on disk. SEC requests are throttled well
 under the SEC fair-access limit of 10 requests/second.
 """
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -16,7 +17,16 @@ ROOT = Path(__file__).resolve().parents[1]
 RAW = ROOT / "data" / "raw"
 RAW.mkdir(parents=True, exist_ok=True)
 
-SEC_UA = "Jeb Farneth jebwfarneth@outlook.com"
+def _sec_user_agent():
+    """SEC asks for a name + contact email in the User-Agent. Set SEC_USER_AGENT or
+    put it in private/sec_user_agent.txt (git-ignored); it is never committed."""
+    ua = os.environ.get("SEC_USER_AGENT")
+    f = ROOT / "private" / "sec_user_agent.txt"
+    if not ua and f.exists():
+        ua = f.read_text().strip()
+    if not ua:
+        raise SystemExit("Set SEC_USER_AGENT='Your Name your@email' (SEC fair-access policy) before fetching.")
+    return ua
 _last_sec = [0.0]
 
 
@@ -40,7 +50,7 @@ def cached(name, url, sec=False, force=False, use_curl=False):
         subprocess.run(["curl", "-sf", "-m", "120", "--retry", "3", "-o", str(path), url], check=True)
         print(f"downloaded {name}")
         return path
-    headers = {"User-Agent": SEC_UA if sec else "dcf-valuation-script/1.0"}
+    headers = {"User-Agent": _sec_user_agent() if sec else "dcf-valuation-script/1.0"}
     if sec:
         wait = 0.25 - (time.time() - _last_sec[0])  # <= 4 req/s
         if wait > 0:
@@ -132,6 +142,8 @@ def treasury_2025():
 
 
 if __name__ == "__main__" and "all" in sys.argv:
+    plnt_docs()
+    plnt_8k()
     market()
     treasury_2025()
 
